@@ -11,10 +11,11 @@ namespace UnitTests
 	{
 	public:
 		
-		TEST_METHOD(TestInit1)
+		TEST_METHOD(TestLoad1)
 		{
-			BCDds* b = new BCDds();
-			Assert::IsNotNull(b);
+						
+			Assert::Fail(L"Failes");
+			// TODO: Your test code here
 		}
 
 	};

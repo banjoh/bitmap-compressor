@@ -9,6 +9,8 @@
 // Forward declarations
 class BCBitmap;
 
+enum Format { UNKNOWN, DXT1, DXT2, DXT3, DXT4, DXT5 };
+
 class BITMAPCOMPRESSOR_API BCDds
 {
 public:
@@ -17,8 +19,10 @@ public:
 
 	void loadDds(const std::string& ddsFile);
 	void saveDds(std::string& ddsFile);
-	BCBitmap* convertToBitmap();
+	BCBitmap* uncompress();
+
+	inline Format format() { return f; };
 
 private:
-
+	Format f;
 };

@@ -10,7 +10,7 @@ void BCDds::saveDds(std::string& ddsFile)
 {
 }
 
-BCBitmap* BCDds::convertToBitmap()
+BCBitmap* BCDds::uncompress()
 {
 	return nullptr;
 }
