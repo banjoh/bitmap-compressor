@@ -30,9 +30,4 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Image Include="TestData\img1.bmp">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
 </Project>

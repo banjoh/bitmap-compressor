@@ -39,8 +39,10 @@ typedef struct DIB
 
 typedef struct
 {
-
-} COLOUR;
+	uint8_t* bytes;
+	int32_t width;
+	int32_t height;
+} PIXELDATA;
 
 class BITMAPCOMPRESSOR_API BCBitmap
 {

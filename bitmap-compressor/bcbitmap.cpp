@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "bcbitmap.h"
 #include "bcdds.h"
+#include "reader.h"
 
 #include <fstream>
 #include <iostream>
@@ -9,14 +10,6 @@
 using namespace std;
 
 #pragma region Helpers
-void BCBitmap::copy(char* dst, const uint8_t* src, int size)
-{
-	for (int i = 0; i < size; i++)
-	{
-		dst[i] = (char)src[i];
-	}
-}
-
 std::ostream& operator<<(std::ostream& out, const BCBitmap& b)
 {
 	return out << "bitmap" << endl;
@@ -28,10 +21,11 @@ void BCBitmap::loadBitmap(const string& imgPath)
 {
 	loaded = false;
 	cout << "Loading " << imgPath << " to memory";
-	fstream fs;
+	ifstream fs;
 	try
 	{
 		fs.open(imgPath);
+		fs.unsetf(ios::skipws);
 		if (fs.good())
 		{
 			// get length of file:
@@ -59,7 +53,7 @@ void BCBitmap::loadBitmap(const string& imgPath)
 		dib = nullptr;
 		header = nullptr;
 		pixelArray = nullptr;
-		cerr << "Failed to load bitmpad" << endl;
+		cerr << "Failed to load bitmap" << endl;
 	}	
 }
 
@@ -68,12 +62,12 @@ bool BCBitmap::readHeader(istream_iterator<uint8_t>& it)
 	shared_ptr<HEADER> h(new HEADER());
 
 	uint8_t arr[2];
-	if (!readNext(it, sizeof(arr), arr)) return false;
-	copy(h->id, arr, sizeof(arr));
-	if (!readNext(it, h->size)) return false;
-	if (!readNext(it, h->reserve1)) return false;
-	if (!readNext(it, h->reserve2)) return false;
-	if (!readNext(it, h->offset)) return false;
+	if (!Reader::readNext(it, sizeof(arr), arr)) return false;
+	Reader::copy(h->id, arr, sizeof(arr));
+	if (!Reader::readNext(it, h->size)) return false;
+	if (!Reader::readNext(it, h->reserve1)) return false;
+	if (!Reader::readNext(it, h->reserve2)) return false;
+	if (!Reader::readNext(it, h->offset)) return false;
 	
 	header = h;
 	return true;
@@ -85,17 +79,17 @@ bool BCBitmap::readDib(istream_iterator<uint8_t>& it)
 
 	shared_ptr<DIB> d(new DIB());
 
-	if (!readNext(it, d->headerSize)) return false;
-	if (!readNext(it, d->width)) return false;
-	if (!readNext(it, d->height)) return false;
-	if (!readNext(it, d->planes)) return false;
-	if (!readNext(it, d->colourDepth)) return false;
-	if (!readNext(it, d->compression)) return false;
-	if (!readNext(it, d->imgSize)) return false;
-	if (!readNext(it, d->xResolution)) return false;
-	if (!readNext(it, d->yResolution)) return false;
-	if (!readNext(it, d->pallete)) return false;
-	if (!readNext(it, d->important)) return false;
+	if (!Reader::readNext(it, d->headerSize)) return false;
+	if (!Reader::readNext(it, d->width)) return false;
+	if (!Reader::readNext(it, d->height)) return false;
+	if (!Reader::readNext(it, d->planes)) return false;
+	if (!Reader::readNext(it, d->colourDepth)) return false;
+	if (!Reader::readNext(it, d->compression)) return false;
+	if (!Reader::readNext(it, d->imgSize)) return false;
+	if (!Reader::readNext(it, d->xResolution)) return false;
+	if (!Reader::readNext(it, d->yResolution)) return false;
+	if (!Reader::readNext(it, d->pallete)) return false;
+	if (!Reader::readNext(it, d->important)) return false;
 
 	// To avoid extra padding bytes
 	if (d->width % 4 != 0)
@@ -127,7 +121,7 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 	int byteCount = 0;
 	for (int i = 0; i < arraySize; i++)
 	{
-		if (!readNext(it, arr.get()[i]))
+		if (!Reader::readNext(it, arr.get()[i]))
 		{
 			// Some pixels are missing in the file
 			continue;
@@ -139,75 +133,6 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 
 	return true;
 }
-
-bool BCBitmap::readNext(istream_iterator<uint8_t>& it, int size, uint8_t* out)
-{
-	istream_iterator<uint8_t> eos;      // end-of-stream iterator
-	for (int i = 0; i < size; i++)
-	{
-		if (it != eos)
-		{
-			out[i] = *it;
-			++it;
-			++currPos;
-		}
-		else
-		{
-			// Reached end of stream
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool BCBitmap::readNext(istream_iterator<uint8_t>& it, uint32_t& out)
-{
-	uint8_t arr[4];
-	if (!readNext(it, sizeof(arr), arr)) return false;
-	
-	uint32_t temp = *(uint32_t *)arr;
-	out = *(uint32_t *)arr;
-
-	return true;
-}
-
-bool BCBitmap::readNext(istream_iterator<uint8_t>& it, uint8_t& out)
-{
-	uint8_t arr[1];
-	if (!readNext(it, sizeof(arr), arr)) return false;
-
-	out = *(uint8_t *)arr;
-
-	return true;
-}
-
-bool BCBitmap::readNext(istream_iterator<uint8_t>& it, uint16_t& out)
-{
-	uint8_t arr[2];
-	if (!readNext(it, sizeof(arr), arr)) return false;
-
-	out = *(uint16_t *)arr;
-
-	return true;
-}
-
-bool BCBitmap::readNext(istream_iterator<uint8_t>& it, int32_t& out)
-{
-	uint32_t a;
-	if (!readNext(it, a)) return false;
-
-	out = (int32_t)a;
-	return true;
-}
-bool BCBitmap::readNext(istream_iterator<uint8_t>& it, int16_t& out)
-{
-	uint16_t a;
-	if (!readNext(it, a)) return false;
-
-	out = (int16_t)a;
-	return true;
-}
 #pragma endregion
 
 #pragma region Write bitmap data
@@ -216,6 +141,7 @@ void BCBitmap::saveBitmap(const string& imgPath)
 	cout << "Saving bitmap to " << imgPath;
 	ofstream fs;
 	fs.open(imgPath, ofstream::out | ofstream::trunc);
+	fs.unsetf(ios::skipws);
 
 	if (fs.good() && dib != nullptr && pixelArray != nullptr && header != nullptr)
 	{

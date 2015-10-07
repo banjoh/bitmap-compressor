@@ -2,6 +2,7 @@
 #include "CppUnitTest.h"
 #include "..\bitmap-compressor\bcbitmap.h"
 #include "..\bitmap-compressor\bcdds.h"
+#include "..\bitmap-compressor\reader.h"
 
 #include <iostream>
 
@@ -12,19 +13,35 @@ TEST_CLASS(UnitTest1)
 {
 public:
 
-	TEST_METHOD(TestLoad1)
+	TEST_METHOD(TestLoadBitmap1)
 	{
 		BCBitmap b;
 		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
 		Assert::IsTrue(b.bitmapLoaded());
 	}
 
-	TEST_METHOD(TestSave1)
+	TEST_METHOD(TestSaveBitmap1)
 	{
 		BCBitmap b;
 		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
 		Assert::IsTrue(b.bitmapLoaded());
 		b.saveBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img2.bmp");
+		// How do we assert?
+	}
+
+	TEST_METHOD(TestLoadDds1)
+	{
+		BCDds d;
+		d.loadDds("C:/Dev/bitmap-compressor/Debug/TestData/img1.dds");
+		Assert::IsTrue(d.ddsLoaded());
+	}
+
+	TEST_METHOD(TestSaveDds1)
+	{
+		BCDds d;
+		d.loadDds("C:/Dev/bitmap-compressor/Debug/TestData/img1.dds");
+		Assert::IsTrue(d.ddsLoaded());
+		d.saveDds("C:/Dev/bitmap-compressor/Debug/TestData/img2.dds");
 		// How do we assert?
 	}
 
@@ -35,9 +52,9 @@ public:
 		stringstream s;
 		s << "1234";
 		istream_iterator<uint8_t> it(s);
-		Assert::IsTrue(b.readNext(it, sizeof(arr), arr));
+		Assert::IsTrue(Reader::readNext(it, sizeof(arr), arr));
 		char a[4];
-		b.copy(a, arr, 4);
+		Reader::copy(a, arr, 4);
 		Assert::AreEqual(a[0], '1');
 		Assert::AreEqual(a[1], '2');
 		Assert::AreEqual(a[2], '3');
@@ -60,7 +77,7 @@ public:
 		}
 		s.flush();
 		istream_iterator<uint8_t> it(s);
-		Assert::IsTrue(b.readNext(it, num));
+		Assert::IsTrue(Reader::readNext(it, num));
 		uint32_t val = 4294967295;
 		Assert::AreEqual(num, val);
 	}
@@ -79,7 +96,7 @@ public:
 		}
 		s.flush();
 		istream_iterator<uint8_t> it(s);
-		Assert::IsTrue(b.readNext(it, num));
+		Assert::IsTrue(Reader::readNext(it, num));
 		uint16_t val = 65535;
 		Assert::IsTrue(num == val);
 	}

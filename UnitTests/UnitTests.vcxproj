@@ -171,17 +171,11 @@
       <Project>{070bcdb4-e1e7-4fb0-b5c7-e1851d033b7a}</Project>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Image Include="TestData\img1.bmp" />
-  </ItemGroup>
   <Target Name="CopyContent" AfterTargets="Build">
     <ItemGroup>
       <ContentFiles Include="TestData/*.*" />
     </ItemGroup>
-    <Copy DestinationFolder="../$(Configuration)/TestData/"
-          SkipUnchangedFiles="True"
-          SourceFiles="@(ContentFiles)"
-          UseHardlinksIfPossible="False" />
+    <Copy DestinationFolder="../$(Configuration)/TestData/" SkipUnchangedFiles="True" SourceFiles="@(ContentFiles)" UseHardlinksIfPossible="False" />
   </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
