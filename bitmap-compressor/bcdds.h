@@ -17,7 +17,7 @@
 #define DDSD_PIXELFORMAT		0x1000
 #define DDSCAPS_TEXTURE			0x1000
 #define DDPF_FOURCC				0x4
-#define DXT1					0x44585431;	// DXT1
+#define DXT1_FOURCC				'1TXD'
 
 class BCBitmap;
 
@@ -66,7 +66,7 @@ typedef struct
 	DDS_HEADER				header;
 	//DDS_HEADER_DXT10		header10;
 	unique_ptr<TEXEL>		texels;
-	int						dataLength;
+	int						texelLength;
 } DXT;
 
 class BITMAPCOMPRESSOR_API BCDds

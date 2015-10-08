@@ -88,12 +88,11 @@ bool BCDds::readData(istream& is)
 		return false;
 
 	// Read in the rest of the data
-	d->dataLength = length - DDS_HEADER_SIZE - sizeof(d->dwMagic);
-	//d->bdata = unique_ptr<uint8_t>(new uint8_t[d->dataLength]);
-	int texelSize = d->dataLength / sizeof(TEXEL);
-	d->texels = unique_ptr<TEXEL>(new TEXEL[texelSize]);
+	int dataLength = length - DDS_HEADER_SIZE - sizeof(d->dwMagic);
+	d->texelLength = dataLength / sizeof(TEXEL);
+	d->texels = unique_ptr<TEXEL>(new TEXEL[d->texelLength]);
 
-	for (int i = 0; i < texelSize; i++)
+	for (int i = 0; i < d->texelLength; i++)
 	{
 		if (!Reader::readNext(it, d->texels.get()[i])) return false;
 	}
@@ -151,14 +150,11 @@ void BCDds::writeData(ostream& s)
 	s.write((char*)&(dxt->header.dwReserved2), sizeof(uint32_t));
 
 	// Write data
-	int texelSize = dxt->dataLength / sizeof(TEXEL);
-	for (int i = 0; i < texelSize; i++)
+	for (int i = 0; i < dxt->texelLength; i++)
 	{
-		TEXEL t = dxt->texels.get()[i];
-		char* c = (char*)&(t.rgb565_0);
-		s.write((char*)&(t.rgb565_0), sizeof(uint16_t));
-		s.write((char*)&(t.rgb565_3), sizeof(uint16_t));
-		s.write((char*)&(t.colours), sizeof(uint32_t));
+		s.write((char*)&(dxt->texels.get()[i].rgb565_0), sizeof(uint16_t));
+		s.write((char*)&(dxt->texels.get()[i].rgb565_3), sizeof(uint16_t));
+		s.write((char*)&(dxt->texels.get()[i].colours), sizeof(uint32_t));
 	}
 }
 

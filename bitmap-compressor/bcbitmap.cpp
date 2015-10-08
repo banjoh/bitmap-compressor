@@ -195,8 +195,7 @@ BCDds* BCBitmap::compressDXT1()
 {
 	unique_ptr<BCDds> bds(new BCDds());
 	shared_ptr<DXT> d(new DXT());
-	bds->dxt = d;
-
+	
 	d->dwMagic = DDS_MAGIC;
 
 	d->header.dwSize = DDS_HEADER_SIZE;
@@ -215,7 +214,7 @@ BCDds* BCBitmap::compressDXT1()
 
 	d->header.ddspf.dwSize = DDS_PIXELFORMAT_SIZE;
 	d->header.ddspf.dwFlags = DDPF_FOURCC;
-	d->header.ddspf.dwFourCC = DXT1;
+	d->header.ddspf.dwFourCC = DXT1_FOURCC;
 	d->header.ddspf.dwRGBBitCount = 0;
 	d->header.ddspf.dwRBitMask = 0;
 	d->header.ddspf.dwGBitMask = 0;
@@ -232,7 +231,8 @@ BCDds* BCBitmap::compressDXT1()
 	shared_ptr<PIXEL> sqr(new PIXEL[TEXEL_WIDTH *  TEXEL_WIDTH]);
 	auto texelWidth = dib->width / TEXEL_WIDTH;
 	auto texelHeight = dib->height / TEXEL_WIDTH;
-	d->texels = unique_ptr<TEXEL>(new TEXEL[texelWidth * texelHeight]);
+	d->texelLength = texelWidth * texelHeight;
+	d->texels = unique_ptr<TEXEL>(new TEXEL[d->texelLength]);
 	int txIdx = 0;
 
 	// Encode pixels
@@ -261,6 +261,7 @@ BCDds* BCBitmap::compressDXT1()
 		}
 	}
 
+	bds->dxt = d;
 	return bds.release();
 }
 

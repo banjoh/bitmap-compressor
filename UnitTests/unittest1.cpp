@@ -155,8 +155,12 @@ public:
 		BCBitmap b;
 		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
 		Assert::IsTrue(b.bitmapLoaded());
+		
 		BCDds* dds = b.compressDXT1();
 		Assert::IsNotNull(dds);
+		uint32_t f = '1TXD';
+		Assert::IsTrue(dds->dxt->header.ddspf.dwFourCC == f);
+
 		dds->saveDds("C:/Dev/bitmap-compressor/Debug/TestData/img3.dds");
 	}
 };
