@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cassert>
+#include <cmath>
 
 using namespace std;
 
@@ -34,8 +35,11 @@ public:
 		// Pick two pixels randomly
 		// TODO: Fix me
 		PIXEL p[2];
-		p[0] = pixels[rand() % TEXEL_SIZE];
-		p[1] = pixels[rand() % TEXEL_SIZE];
+		PIXEL ref;
+		ref.red = ref.green = ref.blue = 0;
+		p[0] = pixels[pickPixel(pixels, ref)];
+		ref.red = ref.green = ref.blue = 255;
+		p[1] = pixels[pickPixel(pixels, ref)];
 
 		TEXEL t;
 		t.rgb565_1 = (p[0].red << 11) | (p[0].green << 5) | p[0].blue;
@@ -53,6 +57,27 @@ public:
 		return t;
 	}
 
+	static int pickPixel(const PIXEL* pixels, const PIXEL& ref)
+	{
+		int idx = 0;
+		int shortestDist = 255*255 + 255*255 + 255*255;
+		for (int i = 0; i < TEXEL_SIZE; i++)
+		{
+			PIXEL p = pixels[i];
+			// Calculate distance closest to the reference pixel
+			// Sqrt((x1-x2)^2+(y1-y1)^2+(z1-z2)^2). No need to take sqrt since we
+			// are just comparing values
+
+			int d = abs(pow((ref.red - p.red), 2) + pow((ref.green - p.green), 2) + pow((ref.blue - p.blue), 2));
+			if (d <= shortestDist)
+			{
+				idx = i;
+				shortestDist = d;
+			}
+		}
+		return idx;
+	}
+
 	static PIXEL* makePixels(const TEXEL& t)
 	{
 		PIXEL c[4];
@@ -65,7 +90,9 @@ public:
 		c[1].green = (t.rgb565_2 & GREEN_MASK) >> 5;
 		c[1].blue = (t.rgb565_2 & BLUE_MASK);
 
-		opengLInterpol(c);
+		interpolate(c[0].red, c[1].red, c[2].red, c[3].red);
+		interpolate(c[0].green, c[1].green, c[2].green, c[3].green);
+		interpolate(c[0].blue, c[1].blue, c[2].blue, c[3].blue);
 
 		PIXEL* pixels = new PIXEL[TEXEL_SIZE];
 		for (int i = 0; i < TEXEL_SIZE; i++)
@@ -76,15 +103,10 @@ public:
 		return pixels;
 	}
 
-	static void opengLInterpol(PIXEL* cArr)
+	static void interpolate(const uint8_t& c0, const uint8_t& c1, uint8_t& c2, uint8_t& c3)
 	{
 		// https://www.opengl.org/wiki/S3_Texture_Compression
-		// RED
-		uint8_t c0 = cArr[0].red;
-		uint8_t c1 = cArr[1].red;
-		uint8_t c2 = 0;
-		uint8_t c3 = 0;
-		if (cArr[0].red > cArr[1].red)
+		if (c0 > c1)
 		{
 			c2 = (2 * c0 + c1) / 3; //(2*color0 + color1) / 3
 			c3 = (c0 + 2 * c1) / 3; //(color0 + 2 * color1) / 3
@@ -94,44 +116,6 @@ public:
 			c2 = (c0 + c1) / 2; //(color0 + color1) / 2
 			c3 = 0;				//Black
 		}
-		cArr[2].red = c2;
-		cArr[3].red = c3;
-
-		// GREEN
-		c0 = cArr[0].green;
-		c1 = cArr[1].green;
-		c2 = 0;
-		c3 = 0;
-		if (cArr[0].red > cArr[1].red)
-		{
-			c2 = (2 * c0 + c1) / 3; //(2*color0 + color1) / 3
-			c3 = (c0 + 2 * c1) / 3; //(color0 + 2 * color1) / 3
-		}
-		else
-		{
-			c2 = (c0 + c1) / 2; //(color0 + color1) / 2
-			c3 = 0;				//Black
-		}
-		cArr[2].green = c2;
-		cArr[3].green = c3;
-
-		// BLUE
-		c0 = cArr[0].blue;
-		c1 = cArr[1].blue;
-		c2 = 0;
-		c3 = 0;
-		if (cArr[0].red > cArr[1].red)
-		{
-			c2 = (2 * c0 + c1) / 3; //(2*color0 + color1) / 3
-			c3 = (c0 + 2 * c1) / 3; //(color0 + 2 * color1) / 3
-		}
-		else
-		{
-			c2 = (c0 + c1) / 2; //(color0 + color1) / 2
-			c3 = 0;				//Black
-		}
-		cArr[2].blue = c2;
-		cArr[3].blue = c3;
 	}
 
 	static void setBits(uint32_t& val, const int& idx, const uint8_t& mask)

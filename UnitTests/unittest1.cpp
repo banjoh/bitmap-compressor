@@ -26,8 +26,7 @@ public:
 		BCBitmap b;
 		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
 		Assert::IsTrue(b.loaded());
-		b.saveBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img2.bmp");
-		// How do we assert?
+		Assert::IsTrue(b.saveBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img2.bmp"));
 	}
 
 	TEST_METHOD(TestLoadDds1)
@@ -42,8 +41,7 @@ public:
 		BCDds d;
 		d.loadDds("C:/Dev/bitmap-compressor/Debug/TestData/img1.dds");
 		Assert::IsTrue(d.loaded());
-		d.saveDds("C:/Dev/bitmap-compressor/Debug/TestData/img2.dds");
-		// How do we assert?
+		Assert::IsTrue(d.saveDds("C:/Dev/bitmap-compressor/Debug/TestData/img2.dds"));
 	}
 
 	TEST_METHOD(TestToChar)
