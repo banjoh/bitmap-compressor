@@ -1,11 +1,13 @@
 #include "stdafx.h"
-#include "bcbitmap.h"
 #include "bcdds.h"
+#include "bcbitmap.h"
 #include "reader.h"
+#include "algorithm.h"
 
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
+#include <memory>
 
 using namespace std;
 
@@ -28,13 +30,7 @@ void BCBitmap::loadBitmap(const string& imgPath)
 		fs.unsetf(ios::skipws);
 		if (fs.good())
 		{
-			// get length of file:
-			fs.seekg(0, fs.end);
-			int length = fs.tellg();
-			fs.seekg(0, fs.beg);
-
 			istream_iterator<uint8_t> it(fs);
-			currPos = 0;
 			loaded = readHeader(it) && readDib(it) && readPixelArray(it);
 			fs.close();
 		}
@@ -52,7 +48,6 @@ void BCBitmap::loadBitmap(const string& imgPath)
 	{
 		dib = nullptr;
 		header = nullptr;
-		pixelArray = nullptr;
 		cerr << "Failed to load bitmap" << endl;
 	}	
 }
@@ -114,42 +109,43 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 	if (header == nullptr)
 		return false;
 
-	int arraySize = dib->imgSize;
-
-	// Store bitmap pixel data to memory
-	auto arr = shared_ptr<uint8_t>(new (std::nothrow) uint8_t[arraySize]);
-	int byteCount = 0;
-	for (int i = 0; i < arraySize; i++)
+	PIXEL** pixels = new PIXEL*[dib->height];
+	int count = 0;
+	for (int i = 0; i < dib->height; i++)
 	{
-		if (!Reader::readNext(it, arr.get()[i]))
+		pixels[i] = new PIXEL[dib->width];
+		for (int j = 0; j < dib->width; j++)
 		{
-			// Some pixels are missing in the file
-			continue;
+			if (!Reader::readNext(it, pixels[i][j])) return false;
+			count++;
 		}
-		byteCount++;
 	}
-
-	pixelArray = arr;
+	pixelData.pixels = pixels;
+	pixelData.height = dib->height;
+	pixelData.width = dib->width;
 
 	return true;
 }
 #pragma endregion
 
 #pragma region Write bitmap data
-void BCBitmap::saveBitmap(const string& imgPath)
+bool BCBitmap::saveBitmap(const string& imgPath)
 {
 	cout << "Saving bitmap to " << imgPath;
 	ofstream fs;
 	fs.open(imgPath, ofstream::out | ofstream::trunc);
 	fs.unsetf(ios::skipws);
 
-	if (fs.good() && dib != nullptr && pixelArray != nullptr && header != nullptr)
+	if (fs.good() && dib != nullptr && header != nullptr && pixelData.pixels != nullptr)
 	{
 		writeHeader(fs);
 		writeDib(fs);
 		writePixelArray(fs);
 		fs.close();
+		return true;
 	}
+
+	return false;
 }
 
 void BCBitmap::writeHeader(ostream& s)
@@ -178,11 +174,18 @@ void BCBitmap::writeDib(ostream& s)
 
 void BCBitmap::writePixelArray(ostream& s)
 {
-	int arraySize = dib->imgSize;
-
-	for (int i = 0; i < arraySize; i++)
+	PIXEL** pixels = pixelData.pixels;
+	int count = 0;
+	for (int i = 0; i < pixelData.height; i++)
 	{
-		s.write((char*) &(pixelArray.get()[i]), sizeof(uint8_t));
+		for (int j = 0; j < pixelData.width; j++)
+		{
+			PIXEL p = pixels[i][j];
+			s.write((char*)&(p.red), sizeof(uint8_t));
+			s.write((char*)&(p.green), sizeof(uint8_t));
+			s.write((char*)&(p.blue), sizeof(uint8_t));
+			count++;
+		}
 	}
 }
 #pragma endregion
@@ -190,7 +193,75 @@ void BCBitmap::writePixelArray(ostream& s)
 #pragma region Compress bitmap
 BCDds* BCBitmap::compressDXT1()
 {
-	return nullptr;
+	unique_ptr<BCDds> bds(new BCDds());
+	shared_ptr<DXT> d(new DXT());
+	bds->dxt = d;
+
+	d->dwMagic = DDS_MAGIC;
+
+	d->header.dwSize = DDS_HEADER_SIZE;
+	d->header.dwFlags = DDSD_PIXELFORMAT | DDSD_CAPS;
+	d->header.dwHeight = dib->width;
+	d->header.dwWidth = dib->height;
+	// DXT1 max( 1, ((width+3)/4) ) * block-size
+	d->header.dwPitchOrLinearSize = max(1, ((d->header.dwWidth + 3) / 4)) * 8;
+	d->header.dwDepth = 0;
+	d->header.dwMipMapCount = 0;
+	d->header.dwReserved1[11];
+	for (int i = 0; i < 11; i++)
+	{
+		d->header.dwReserved1[i] = 0;
+	}
+
+	d->header.ddspf.dwSize = DDS_PIXELFORMAT_SIZE;
+	d->header.ddspf.dwFlags = DDPF_FOURCC;
+	d->header.ddspf.dwFourCC = DXT1;
+	d->header.ddspf.dwRGBBitCount = 0;
+	d->header.ddspf.dwRBitMask = 0;
+	d->header.ddspf.dwGBitMask = 0;
+	d->header.ddspf.dwBBitMask = 0;
+	d->header.ddspf.dwABitMask = 0;
+
+	d->header.dwCaps = DDSCAPS_TEXTURE;
+	d->header.dwCaps2 = 0;
+	d->header.dwCaps3 = 0;
+	d->header.dwCaps4 = 0;
+	d->header.dwReserved2 = 0;
+
+	auto p = pixelData.pixels;
+	shared_ptr<PIXEL> sqr(new PIXEL[TEXEL_WIDTH *  TEXEL_WIDTH]);
+	auto texelWidth = dib->width / TEXEL_WIDTH;
+	auto texelHeight = dib->height / TEXEL_WIDTH;
+	d->texels = unique_ptr<TEXEL>(new TEXEL[texelWidth * texelHeight]);
+	int txIdx = 0;
+
+	// Encode pixels
+	for (int i = 0; i < texelHeight; i++)
+	{
+		// Outer loop to iterate through the height
+		for (int j = 0; j < texelWidth; j++)
+		{
+			// Inner loop for the width
+			// TODO: This extra storage loop can be optimized out
+			int idx = 0;
+			for (int k = 0; k < TEXEL_WIDTH; k++)
+			{
+				for (int l = 0; l < TEXEL_WIDTH; l++)
+				{
+					int x = (j * TEXEL_WIDTH) + l;
+					int y = (i * TEXEL_WIDTH) + k;
+					sqr.get()[idx] = p[y][x];
+					++idx;
+				}
+			}
+
+			TEXEL t = Algorithm::makeTexel(sqr.get());
+			d->texels.get()[txIdx] = t;
+			++txIdx;
+		}
+	}
+
+	return bds.release();
 }
 
 BCDds* BCBitmap::compressDXT2()
@@ -223,6 +294,5 @@ BCBitmap::~BCBitmap()
 {
 	header.reset();
 	dib.reset();
-	pixelArray.reset();
 }
 

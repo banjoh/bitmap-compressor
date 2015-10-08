@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef BITMAPCOMPRESSOR_EXPORTS
 #define BITMAPCOMPRESSOR_API __declspec(dllexport)
 #else
@@ -12,7 +14,6 @@ using namespace std;
 
 class BITMAPCOMPRESSOR_API Reader
 {
-	friend class UnitTest1;
 public:
 
 	// Read data from stream iterator
@@ -46,6 +47,15 @@ public:
 		return true;
 	}
 
+	static bool readNext(istream_iterator<uint8_t>& it, TEXEL& out)
+	{
+		if (!readNext(it, out.rgb565_0)) return false;
+		if (!readNext(it, out.rgb565_3)) return false;
+		if (!readNext(it, out.colours)) return false;
+		
+		return true;
+	}
+
 	static bool readNext(istream_iterator<uint8_t>& it, uint32_t& out)
 	{
 		uint8_t arr[4];
@@ -53,6 +63,18 @@ public:
 
 		uint32_t temp = *(uint32_t *)arr;
 		out = *(uint32_t *)arr;
+
+		return true;
+	}
+
+	static bool readNext(istream_iterator<uint8_t>& it, PIXEL& out)
+	{
+		uint8_t arr[3];
+		if (!readNext(it, sizeof(arr), arr)) return false;
+
+		out.red = arr[0];
+		out.green = arr[1];
+		out.blue = arr[2];
 
 		return true;
 	}

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef BITMAPCOMPRESSOR_EXPORTS
 #define BITMAPCOMPRESSOR_API __declspec(dllexport)
 #else
@@ -39,7 +41,27 @@ typedef struct DIB
 
 typedef struct
 {
-	uint8_t* bytes;
+	uint8_t red = 0x0;
+	uint8_t green = 0x0;
+	uint8_t blue = 0x0;
+} PIXEL;
+
+typedef struct PIXELDATA
+{
+	~PIXELDATA()
+	{
+		if (pixels != nullptr)
+		{
+			for (int i = 0; i < height; i++)
+			{
+				delete[] pixels[i];
+				pixels[i] = nullptr;
+			}
+			delete[] pixels;
+			pixels = nullptr;
+		}
+	};
+	PIXEL** pixels = nullptr;
 	int32_t width;
 	int32_t height;
 } PIXELDATA;
@@ -52,7 +74,7 @@ public:
 	~BCBitmap();
 
 	void loadBitmap(const string& imgPath);
-	void saveBitmap(const string& imgPath);
+	bool saveBitmap(const string& imgPath);
 	inline bool bitmapLoaded() { return loaded; }
 	BCDds* compressDXT1();
 	
@@ -69,27 +91,16 @@ private:
 	bool readHeader(istream_iterator<uint8_t>& it);
 	bool readDib(istream_iterator<uint8_t>& it);
 	bool readPixelArray(istream_iterator<uint8_t>& it);
-	bool readNext(istream_iterator<uint8_t>& it, int size, uint8_t* out);
-	bool readNext(istream_iterator<uint8_t>& it, uint32_t& out);
-	bool readNext(istream_iterator<uint8_t>& it, uint16_t& out);
-	bool readNext(istream_iterator<uint8_t>& it, int32_t& out);
-	bool readNext(istream_iterator<uint8_t>& it, int16_t& out);
-	bool readNext(istream_iterator<uint8_t>& it, uint8_t& out);
 
 	// Write bitmap data
 	void writeHeader(ostream& s);
 	void writeDib(ostream& s);
 	void writePixelArray(ostream& s);
 
-	// Helpers
-	void copy(char* dst, const uint8_t* src, int size);
-
 private:
 	volatile bool loaded = false;
 	shared_ptr<HEADER> header;
 	shared_ptr<DIB> dib;
-	shared_ptr<uint8_t> pixelArray;
-	int currPos = 0;
-	int fileLength = 0;
+	PIXELDATA pixelData;
 };
 

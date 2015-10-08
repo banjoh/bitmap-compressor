@@ -3,6 +3,7 @@
 #include "..\bitmap-compressor\bcbitmap.h"
 #include "..\bitmap-compressor\bcdds.h"
 #include "..\bitmap-compressor\reader.h"
+#include "..\bitmap-compressor\algorithm.h"
 
 #include <iostream>
 
@@ -101,4 +102,61 @@ public:
 		Assert::IsTrue(num == val);
 	}
 
+	TEST_METHOD(TestSetBit1)
+	{
+		uint32_t val = 0x0;
+		int idx = 0;
+		uint8_t mask = 0x1;
+		Algorithm::setBits(val, idx, mask);
+		uint32_t expected = 0x1;
+		Assert::AreEqual(val, expected);
+	}
+
+	TEST_METHOD(TestSetBit2)
+	{
+		uint32_t val = 0x0;
+		int idx = 11;
+		uint8_t mask = 0x3;
+		Algorithm::setBits(val, idx, mask);
+		uint32_t expected = 0xC00000;
+		Assert::AreEqual(val, expected);
+	}
+
+	TEST_METHOD(TestSetBit3)
+	{
+		uint32_t val = 0x0;
+		Algorithm::setBits(val, 0, 0x1);
+		Algorithm::setBits(val, 5, 0x3);
+		Algorithm::setBits(val, 15, 0x2);
+		uint32_t expected = 0x80000C01;
+		Assert::AreEqual(val, expected);
+	}
+
+	TEST_METHOD(TestGetBit1)
+	{
+		uint32_t val = 0x3;
+		Assert::AreEqual(Algorithm::getBits(val, 0), 3);
+	}
+
+	TEST_METHOD(TestGetBit2)
+	{
+		uint32_t val = 0x22030C3;
+		Assert::AreEqual(Algorithm::getBits(val, 0), 3);
+		Assert::AreEqual(Algorithm::getBits(val, 2), 0);
+		Assert::AreEqual(Algorithm::getBits(val, 3), 3);
+		Assert::AreEqual(Algorithm::getBits(val, 6), 3);
+		Assert::AreEqual(Algorithm::getBits(val, 9), 0);
+		Assert::AreEqual(Algorithm::getBits(val, 10), 2);
+		Assert::AreEqual(Algorithm::getBits(val, 12), 2);
+	}
+
+	TEST_METHOD(TestCompress1)
+	{
+		BCBitmap b;
+		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
+		Assert::IsTrue(b.bitmapLoaded());
+		BCDds* dds = b.compressDXT1();
+		Assert::IsNotNull(dds);
+		dds->saveDds("C:/Dev/bitmap-compressor/Debug/TestData/img3.dds");
+	}
 };

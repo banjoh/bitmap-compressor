@@ -2,13 +2,10 @@
 #include "bcdds.h"
 #include "bcbitmap.h"
 #include "reader.h"
+#include "algorithm.h"
 
 #include <fstream>
 #include <iostream>
-
-#define DDS_MAGIC 542327876 // "DDS "
-#define DDS_HEADER_SIZE 124
-#define DDS_PIXELFORMAT_SIZE 32
 
 void BCDds::loadDds(const string& ddsFile)
 {
@@ -92,15 +89,20 @@ bool BCDds::readData(istream& is)
 
 	// Read in the rest of the data
 	d->dataLength = length - DDS_HEADER_SIZE - sizeof(d->dwMagic);
-	d->bdata = unique_ptr<uint8_t>(new uint8_t[d->dataLength]);
+	//d->bdata = unique_ptr<uint8_t>(new uint8_t[d->dataLength]);
+	int texelSize = d->dataLength / sizeof(TEXEL);
+	d->texels = unique_ptr<TEXEL>(new TEXEL[texelSize]);
 
-	if (!Reader::readNext(it, d->dataLength, d->bdata.get())) return false;
+	for (int i = 0; i < texelSize; i++)
+	{
+		if (!Reader::readNext(it, d->texels.get()[i])) return false;
+	}
 
 	dxt = d;
 	return true;
 }
 
-void BCDds::saveDds(const string& ddsFile)
+bool BCDds::saveDds(const string& ddsFile)
 {
 	cout << "Saving bitmap to " << ddsFile;
 	ofstream fs;
@@ -111,7 +113,10 @@ void BCDds::saveDds(const string& ddsFile)
 	{
 		writeData(fs);
 		fs.close();
+		return true;
 	}
+
+	return false;
 }
 
 void BCDds::writeData(ostream& s)
@@ -146,9 +151,14 @@ void BCDds::writeData(ostream& s)
 	s.write((char*)&(dxt->header.dwReserved2), sizeof(uint32_t));
 
 	// Write data
-	for (int i = 0; i < dxt->dataLength; i++)
+	int texelSize = dxt->dataLength / sizeof(TEXEL);
+	for (int i = 0; i < texelSize; i++)
 	{
-		s.write((char*)&(dxt->bdata.get()[i]), sizeof(uint8_t));
+		TEXEL t = dxt->texels.get()[i];
+		char* c = (char*)&(t.rgb565_0);
+		s.write((char*)&(t.rgb565_0), sizeof(uint16_t));
+		s.write((char*)&(t.rgb565_3), sizeof(uint16_t));
+		s.write((char*)&(t.colours), sizeof(uint32_t));
 	}
 }
 

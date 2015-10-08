@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef BITMAPCOMPRESSOR_EXPORTS
 #define BITMAPCOMPRESSOR_API __declspec(dllexport)
 #else
@@ -8,7 +10,15 @@
 #include <memory>
 #include <iterator>
 
-// Forward declarations
+#define DDS_MAGIC				542327876 // "DDS "
+#define DDS_HEADER_SIZE			124
+#define DDS_PIXELFORMAT_SIZE	32
+#define DDSD_CAPS 				0x1
+#define DDSD_PIXELFORMAT		0x1000
+#define DDSCAPS_TEXTURE			0x1000
+#define DDPF_FOURCC				0x4
+#define DXT1					0x44585431;	// DXT1
+
 class BCBitmap;
 
 using namespace std;
@@ -45,22 +55,30 @@ typedef struct {
 
 typedef struct
 {
+	uint16_t rgb565_0 = 0x0;
+	uint16_t rgb565_3 = 0x0;
+	uint32_t colours = 0x0;
+} TEXEL;
+
+typedef struct
+{
 	uint32_t				dwMagic;
 	DDS_HEADER				header;
 	//DDS_HEADER_DXT10		header10;
-	unique_ptr<uint8_t>		bdata;
+	unique_ptr<TEXEL>		texels;
 	int						dataLength;
 } DXT;
 
 class BITMAPCOMPRESSOR_API BCDds
 {
 	friend class UnitTest1;
+	friend class BCBitmap;
 public:
 	BCDds();
 	~BCDds();
 
 	void loadDds(const string& ddsFile);
-	void saveDds(const string& ddsFile);
+	bool saveDds(const string& ddsFile);
 	BCBitmap* uncompress();
 
 	inline Format format() { return f; };
