@@ -9,8 +9,8 @@
 
 void BCDds::loadDds(const string& ddsFile)
 {
-	loaded = false;
-	cout << "Loading " << ddsFile << " to memory";
+	_loaded = false;
+	cout << "Loading " << ddsFile << " to memory" << endl;
 	ifstream fs;
 	try
 	{
@@ -18,7 +18,7 @@ void BCDds::loadDds(const string& ddsFile)
 		if (fs.good())
 		{
 			fs.unsetf(ios::skipws);
-			loaded = readData(fs);
+			_loaded = readData(fs);
 			fs.close();
 		}
 	}
@@ -28,10 +28,10 @@ void BCDds::loadDds(const string& ddsFile)
 	}
 	catch (...)
 	{
-		cerr << "An exception occured";
+		cerr << "An exception occured" << endl;
 	}
 
-	if (!loaded)
+	if (!_loaded)
 	{
 		cerr << "Failed to load dds file" << endl;
 	}
@@ -43,6 +43,9 @@ bool BCDds::readHeader(istream_iterator<uint8_t>& it, DDS_HEADER& h)
 	if (!Reader::readNext(it, h.dwFlags)) return false;
 	if (!Reader::readNext(it, h.dwHeight)) return false;
 	if (!Reader::readNext(it, h.dwWidth)) return false;
+
+	if (h.dwWidth % 4 != 0 || h.dwHeight % 4 != 0) return false;
+
 	if (!Reader::readNext(it, h.dwPitchOrLinearSize)) return false;
 	if (!Reader::readNext(it, h.dwDepth)) return false;
 	if (!Reader::readNext(it, h.dwMipMapCount)) return false;
@@ -103,7 +106,7 @@ bool BCDds::readData(istream& is)
 
 bool BCDds::saveDds(const string& ddsFile)
 {
-	cout << "Saving bitmap to " << ddsFile;
+	cout << "Saving bitmap to " << ddsFile << endl;
 	ofstream fs;
 	fs.open(ddsFile, ios::trunc | ios::binary);
 	fs.unsetf(ios::skipws);
@@ -160,7 +163,79 @@ void BCDds::writeData(ostream& s)
 
 BCBitmap* BCDds::uncompress()
 {
-	return nullptr;
+	unique_ptr<BCBitmap> b(new BCBitmap());
+	shared_ptr<HEADER> h(new HEADER());
+	shared_ptr<DIB> d(new DIB());
+	b->header = h;
+	b->dib = d;
+
+	// HEADER
+	h->id[0] = 'B';
+	h->id[1] = 'M';
+	h->size;
+	h->reserve1 = 0;
+	h->reserve2 = 0;
+	h->offset = 54; //TODO;
+
+	// DIB
+	d->headerSize = 40;
+	d->width = dxt->header.dwWidth;
+	d->height = dxt->header.dwHeight;
+	d->planes = 1;
+	d->colourDepth = 24;
+	d->compression = BI_RGB;
+	d->imgSize = d->width * d->height * (d->colourDepth / sizeof(uint8_t));
+	d->xResolution;
+	d->yResolution;
+	d->pallete = 0;
+	d->important = 0;
+	
+	//PIXELDATA
+	b->pixelData.width = d->width;
+	b->pixelData.height = d->height;
+
+	// Allocate memory for the pixels
+	b->pixelData.pixels = new PIXEL*[b->pixelData.height];
+	int count = 0;
+	for (int i = 0; i < b->pixelData.height; i++)
+	{
+		b->pixelData.pixels[i] = new PIXEL[b->pixelData.width];
+	}
+
+	TEXEL* ts = dxt->texels.get();
+	int texelWidth = d->width / TEXEL_WIDTH;
+	int texelHeight = d->height / TEXEL_WIDTH;
+	
+	if (dxt->texelLength != texelHeight * texelWidth)
+		return nullptr;
+
+	int t_idx = 0;
+	int x = 0;
+	int y = 0;
+	PIXEL** p2d = b->pixelData.pixels;
+	for (int i = 0; i < texelHeight; i++)
+	{
+		for (int j = 0; j < texelWidth; j++)
+		{
+			PIXEL* ps = Algorithm::makePixels(ts[t_idx++]);
+			int ps_idx = 0;
+			for (int k = 0; k < TEXEL_WIDTH; k++)
+			{
+				for (int l = 0; l < TEXEL_WIDTH; l++)
+				{
+					x = (j * TEXEL_WIDTH) + l;
+					y = (i * TEXEL_WIDTH) + k;
+					PIXEL p = ps[ps_idx++];
+
+					// flip y-axis. The image is drawn up side down. 
+					// A bug in my code?
+					p2d[d->height - (y + 1)][x] = p;
+				}
+			}
+		}
+	}
+
+	return b.release();
 }
 
 BCDds::BCDds()

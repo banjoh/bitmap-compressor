@@ -82,7 +82,7 @@ public:
 	BCBitmap* uncompress();
 
 	inline Format format() { return f; };
-	inline bool ddsLoaded() { return loaded; }
+	inline bool loaded() { return _loaded; }
 
 private:
 	bool readHeader(istream_iterator<uint8_t>& it, DDS_HEADER& h);
@@ -92,5 +92,5 @@ private:
 private:
 	Format f;
 	shared_ptr<DXT> dxt;
-	volatile bool loaded = false;
+	volatile bool _loaded = false;
 };

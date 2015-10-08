@@ -18,14 +18,14 @@ public:
 	{
 		BCBitmap b;
 		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
-		Assert::IsTrue(b.bitmapLoaded());
+		Assert::IsTrue(b.loaded());
 	}
 
 	TEST_METHOD(TestSaveBitmap1)
 	{
 		BCBitmap b;
 		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
-		Assert::IsTrue(b.bitmapLoaded());
+		Assert::IsTrue(b.loaded());
 		b.saveBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img2.bmp");
 		// How do we assert?
 	}
@@ -34,14 +34,14 @@ public:
 	{
 		BCDds d;
 		d.loadDds("C:/Dev/bitmap-compressor/Debug/TestData/img1.dds");
-		Assert::IsTrue(d.ddsLoaded());
+		Assert::IsTrue(d.loaded());
 	}
 
 	TEST_METHOD(TestSaveDds1)
 	{
 		BCDds d;
 		d.loadDds("C:/Dev/bitmap-compressor/Debug/TestData/img1.dds");
-		Assert::IsTrue(d.ddsLoaded());
+		Assert::IsTrue(d.loaded());
 		d.saveDds("C:/Dev/bitmap-compressor/Debug/TestData/img2.dds");
 		// How do we assert?
 	}
@@ -154,13 +154,51 @@ public:
 	{
 		BCBitmap b;
 		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
-		Assert::IsTrue(b.bitmapLoaded());
+		Assert::IsTrue(b.loaded());
 		
 		BCDds* dds = b.compressDXT1();
 		Assert::IsNotNull(dds);
 		uint32_t f = '1TXD';
 		Assert::IsTrue(dds->dxt->header.ddspf.dwFourCC == f);
 
-		dds->saveDds("C:/Dev/bitmap-compressor/Debug/TestData/img3.dds");
+		Assert::IsTrue(dds->saveDds("C:/Dev/bitmap-compressor/Debug/TestData/img3.dds"));
+	}
+
+	TEST_METHOD(TestCompress2)
+	{
+		BCBitmap b;
+		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/med.bmp");
+		Assert::IsTrue(b.loaded());
+
+		BCDds* dds = b.compressDXT1();
+		Assert::IsNotNull(dds);
+		uint32_t f = '1TXD';
+		Assert::IsTrue(dds->dxt->header.ddspf.dwFourCC == f);
+
+		Assert::IsTrue(dds->saveDds("C:/Dev/bitmap-compressor/Debug/TestData/med2.dds"));
+	}
+
+	TEST_METHOD(TestUncompress1)
+	{
+		BCDds d;
+		d.loadDds("C:/Dev/bitmap-compressor/Debug/TestData/img1.dds");
+		Assert::IsTrue(d.loaded());
+
+		BCBitmap* b = d.uncompress();
+		Assert::IsNotNull(b);
+		
+		Assert::IsTrue(b->saveBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img3.bmp"));
+	}
+
+	TEST_METHOD(TestUncompress2)
+	{
+		BCDds d;
+		d.loadDds("C:/Dev/bitmap-compressor/Debug/TestData/med.dds");
+		Assert::IsTrue(d.loaded());
+
+		BCBitmap* b = d.uncompress();
+		Assert::IsNotNull(b);
+
+		Assert::IsTrue(b->saveBitmap("C:/Dev/bitmap-compressor/Debug/TestData/med2.bmp"));
 	}
 };

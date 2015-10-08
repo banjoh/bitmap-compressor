@@ -8,6 +8,9 @@
 
 #define TEXEL_SIZE 16
 #define TEXEL_WIDTH 4
+#define RED_MASK 0xF800
+#define GREEN_MASK 0x7E0
+#define BLUE_MASK 0x1F
 
 #include "bcdds.h"
 #include "bcbitmap.h"
@@ -50,21 +53,21 @@ public:
 		return t;
 	}
 
-	static PIXEL* makePixel(const TEXEL& t)
+	static PIXEL* makePixels(const TEXEL& t)
 	{
-		uint16_t red_mask = 0xF800;
-		uint16_t green_mask = 0x7E0;
-		uint16_t blue_mask = 0x1F;
+		//uint16_t red_mask = 0xF800;
+		//uint16_t green_mask = 0x7E0;
+		//uint16_t blue_mask = 0x1F;
 
 		PIXEL p[4];
 
-		p[0].red = (t.rgb565_0 & red_mask) >> 11;
-		p[0].green = (t.rgb565_0 & green_mask) >> 5;
-		p[0].blue = (t.rgb565_0 & blue_mask);
+		p[0].red = (t.rgb565_0 & RED_MASK) >> 11;
+		p[0].green = (t.rgb565_0 & GREEN_MASK) >> 5;
+		p[0].blue = (t.rgb565_0 & BLUE_MASK);
 
-		p[3].red = (t.rgb565_3 & red_mask) >> 11;
-		p[3].green = (t.rgb565_3 & green_mask) >> 5;
-		p[3].blue = (t.rgb565_3 & blue_mask);
+		p[3].red = (t.rgb565_3 & RED_MASK) >> 11;
+		p[3].green = (t.rgb565_3 & GREEN_MASK) >> 5;
+		p[3].blue = (t.rgb565_3 & BLUE_MASK);
 
 		interpolateColours(p);
 

@@ -21,17 +21,17 @@ std::ostream& operator<<(std::ostream& out, const BCBitmap& b)
 #pragma region Read bitmap data
 void BCBitmap::loadBitmap(const string& imgPath)
 {
-	loaded = false;
-	cout << "Loading " << imgPath << " to memory";
+	_loaded = false;
+	cout << "Loading " << imgPath << " to memory" << endl;
 	ifstream fs;
 	try
 	{
-		fs.open(imgPath);
-		fs.unsetf(ios::skipws);
+		fs.open(imgPath, ios::binary);
 		if (fs.good())
 		{
+			fs.unsetf(ios::skipws);
 			istream_iterator<uint8_t> it(fs);
-			loaded = readHeader(it) && readDib(it) && readPixelArray(it);
+			_loaded = readHeader(it) && readDib(it) && readPixelArray(it);
 			fs.close();
 		}
 	}
@@ -41,10 +41,10 @@ void BCBitmap::loadBitmap(const string& imgPath)
 	}
 	catch (...)
 	{
-		cerr << "An exception occured";
+		cerr << "An exception occured" << endl;
 	}
 	
-	if (!loaded)
+	if (!_loaded)
 	{
 		dib = nullptr;
 		header = nullptr;
@@ -116,7 +116,10 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 		pixels[i] = new PIXEL[dib->width];
 		for (int j = 0; j < dib->width; j++)
 		{
-			if (!Reader::readNext(it, pixels[i][j])) return false;
+			if (!Reader::readNext(it, pixels[i][j]))
+			{
+				return false;
+			}
 			count++;
 		}
 	}
@@ -131,9 +134,9 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 #pragma region Write bitmap data
 bool BCBitmap::saveBitmap(const string& imgPath)
 {
-	cout << "Saving bitmap to " << imgPath;
+	cout << "Saving bitmap to " << imgPath << endl;
 	ofstream fs;
-	fs.open(imgPath, ofstream::out | ofstream::trunc);
+	fs.open(imgPath, ofstream::out | ofstream::trunc | ios::binary);
 	fs.unsetf(ios::skipws);
 
 	if (fs.good() && dib != nullptr && header != nullptr && pixelData.pixels != nullptr)
@@ -234,6 +237,8 @@ BCDds* BCBitmap::compressDXT1()
 	d->texelLength = texelWidth * texelHeight;
 	d->texels = unique_ptr<TEXEL>(new TEXEL[d->texelLength]);
 	int txIdx = 0;
+	int x = 0;
+	int y = 0;
 
 	// Encode pixels
 	for (int i = 0; i < texelHeight; i++)
@@ -242,21 +247,20 @@ BCDds* BCBitmap::compressDXT1()
 		for (int j = 0; j < texelWidth; j++)
 		{
 			// Inner loop for the width
-			// TODO: This extra storage loop can be optimized out
 			int idx = 0;
 			for (int k = 0; k < TEXEL_WIDTH; k++)
 			{
 				for (int l = 0; l < TEXEL_WIDTH; l++)
 				{
-					int x = (j * TEXEL_WIDTH) + l;
-					int y = (i * TEXEL_WIDTH) + k;
-					sqr.get()[idx] = p[y][x];
+					x = (j * TEXEL_WIDTH) + l;
+					y = (i * TEXEL_WIDTH) + k;
+
+					sqr.get()[idx] = p[dib->height - (y + 1)][x];
 					++idx;
 				}
 			}
 
-			TEXEL t = Algorithm::makeTexel(sqr.get());
-			d->texels.get()[txIdx] = t;
+			d->texels.get()[txIdx] = Algorithm::makeTexel(sqr.get());
 			++txIdx;
 		}
 	}

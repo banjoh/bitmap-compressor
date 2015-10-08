@@ -6,6 +6,8 @@
 #define BITMAPCOMPRESSOR_API __declspec(dllimport)
 #endif
 
+#define BI_RGB	0
+
 #include <string>
 #include <iterator>
 #include <memory>
@@ -69,13 +71,14 @@ typedef struct PIXELDATA
 class BITMAPCOMPRESSOR_API BCBitmap
 {
 	friend class UnitTest1;
+	friend class BCDds;
 public:
 	BCBitmap();
 	~BCBitmap();
 
 	void loadBitmap(const string& imgPath);
 	bool saveBitmap(const string& imgPath);
-	inline bool bitmapLoaded() { return loaded; }
+	inline bool loaded() { return _loaded; }
 	BCDds* compressDXT1();
 	
 	// TODO
@@ -98,7 +101,7 @@ private:
 	void writePixelArray(ostream& s);
 
 private:
-	volatile bool loaded = false;
+	volatile bool _loaded = false;
 	shared_ptr<HEADER> header;
 	shared_ptr<DIB> dib;
 	PIXELDATA pixelData;
