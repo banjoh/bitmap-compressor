@@ -155,8 +155,8 @@ void BCDds::writeData(ostream& s)
 	// Write data
 	for (int i = 0; i < dxt->texelLength; i++)
 	{
-		s.write((char*)&(dxt->texels.get()[i].rgb565_0), sizeof(uint16_t));
-		s.write((char*)&(dxt->texels.get()[i].rgb565_3), sizeof(uint16_t));
+		s.write((char*)&(dxt->texels.get()[i].rgb565_1), sizeof(uint16_t));
+		s.write((char*)&(dxt->texels.get()[i].rgb565_2), sizeof(uint16_t));
 		s.write((char*)&(dxt->texels.get()[i].colours), sizeof(uint32_t));
 	}
 }

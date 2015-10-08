@@ -55,8 +55,8 @@ typedef struct {
 
 typedef struct
 {
-	uint16_t rgb565_0 = 0x0;
-	uint16_t rgb565_3 = 0x0;
+	uint16_t rgb565_1 = 0x0;
+	uint16_t rgb565_2 = 0x0;
 	uint32_t colours = 0x0;
 } TEXEL;
 

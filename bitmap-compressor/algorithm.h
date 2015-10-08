@@ -38,8 +38,8 @@ public:
 		p[1] = pixels[rand() % TEXEL_SIZE];
 
 		TEXEL t;
-		t.rgb565_0 = (p[0].red << 11) | (p[0].green << 5) | p[0].blue;
-		t.rgb565_3 = (p[1].red << 11) | (p[1].green << 5) | p[1].blue;
+		t.rgb565_1 = (p[0].red << 11) | (p[0].green << 5) | p[0].blue;
+		t.rgb565_2 = (p[1].red << 11) | (p[1].green << 5) | p[1].blue;
 
 		// TODO: Fix me
 		for (int i = 0; i < TEXEL_SIZE; i++)
@@ -55,36 +55,83 @@ public:
 
 	static PIXEL* makePixels(const TEXEL& t)
 	{
-		//uint16_t red_mask = 0xF800;
-		//uint16_t green_mask = 0x7E0;
-		//uint16_t blue_mask = 0x1F;
+		PIXEL c[4];
 
-		PIXEL p[4];
+		c[0].red = (t.rgb565_1 & RED_MASK) >> 11;
+		c[0].green = (t.rgb565_1 & GREEN_MASK) >> 5;
+		c[0].blue = (t.rgb565_1 & BLUE_MASK);
 
-		p[0].red = (t.rgb565_0 & RED_MASK) >> 11;
-		p[0].green = (t.rgb565_0 & GREEN_MASK) >> 5;
-		p[0].blue = (t.rgb565_0 & BLUE_MASK);
+		c[1].red = (t.rgb565_2 & RED_MASK) >> 11;
+		c[1].green = (t.rgb565_2 & GREEN_MASK) >> 5;
+		c[1].blue = (t.rgb565_2 & BLUE_MASK);
 
-		p[3].red = (t.rgb565_3 & RED_MASK) >> 11;
-		p[3].green = (t.rgb565_3 & GREEN_MASK) >> 5;
-		p[3].blue = (t.rgb565_3 & BLUE_MASK);
-
-		interpolateColours(p);
+		opengLInterpol(c);
 
 		PIXEL* pixels = new PIXEL[TEXEL_SIZE];
 		for (int i = 0; i < TEXEL_SIZE; i++)
 		{
-			pixels[i] = p[getBits(t.colours, i)];
+			pixels[i] = c[getBits(t.colours, i)];
 		}
 
 		return pixels;
 	}
 
-	static void interpolateColours(PIXEL* pArr)
+	static void opengLInterpol(PIXEL* cArr)
 	{
-		// TODO: Interpolate the other 2
-		pArr[1] = pArr[0];
-		pArr[2] = pArr[3];
+		// https://www.opengl.org/wiki/S3_Texture_Compression
+		// RED
+		uint8_t c0 = cArr[0].red;
+		uint8_t c1 = cArr[1].red;
+		uint8_t c2 = 0;
+		uint8_t c3 = 0;
+		if (cArr[0].red > cArr[1].red)
+		{
+			c2 = (2 * c0 + c1) / 3; //(2*color0 + color1) / 3
+			c3 = (c0 + 2 * c1) / 3; //(color0 + 2 * color1) / 3
+		}
+		else
+		{
+			c2 = (c0 + c1) / 2; //(color0 + color1) / 2
+			c3 = 0;				//Black
+		}
+		cArr[2].red = c2;
+		cArr[3].red = c3;
+
+		// GREEN
+		c0 = cArr[0].green;
+		c1 = cArr[1].green;
+		c2 = 0;
+		c3 = 0;
+		if (cArr[0].red > cArr[1].red)
+		{
+			c2 = (2 * c0 + c1) / 3; //(2*color0 + color1) / 3
+			c3 = (c0 + 2 * c1) / 3; //(color0 + 2 * color1) / 3
+		}
+		else
+		{
+			c2 = (c0 + c1) / 2; //(color0 + color1) / 2
+			c3 = 0;				//Black
+		}
+		cArr[2].green = c2;
+		cArr[3].green = c3;
+
+		// BLUE
+		c0 = cArr[0].blue;
+		c1 = cArr[1].blue;
+		c2 = 0;
+		c3 = 0;
+		if (cArr[0].red > cArr[1].red)
+		{
+			c2 = (2 * c0 + c1) / 3; //(2*color0 + color1) / 3
+			c3 = (c0 + 2 * c1) / 3; //(color0 + 2 * color1) / 3
+		}
+		else
+		{
+			c2 = (c0 + c1) / 2; //(color0 + color1) / 2
+			c3 = 0;				//Black
+		}
+		cArr[2].blue = c2;
+		cArr[3].blue = c3;
 	}
 
 	static void setBits(uint32_t& val, const int& idx, const uint8_t& mask)

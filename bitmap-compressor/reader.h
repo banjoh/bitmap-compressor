@@ -49,8 +49,8 @@ public:
 
 	static bool readNext(istream_iterator<uint8_t>& it, TEXEL& out)
 	{
-		if (!readNext(it, out.rgb565_0)) return false;
-		if (!readNext(it, out.rgb565_3)) return false;
+		if (!readNext(it, out.rgb565_1)) return false;
+		if (!readNext(it, out.rgb565_2)) return false;
 		if (!readNext(it, out.colours)) return false;
 		
 		return true;
