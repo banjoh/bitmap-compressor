@@ -63,6 +63,7 @@ typedef struct PIXELDATA
 			pixels = nullptr;
 		}
 	};
+	// 2D array of pixel data
 	PIXEL** pixels = nullptr;
 	int32_t width;
 	int32_t height;
@@ -86,8 +87,6 @@ public:
 	BCDds* compressDXT3();
 	BCDds* compressDXT4();
 	BCDds* compressDXT5();
-
-	friend std::ostream& operator<<(std::ostream& out, const BCBitmap& b);
 
 private:
 	// Read bitmap data

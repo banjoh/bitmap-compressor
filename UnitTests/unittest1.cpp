@@ -151,7 +151,7 @@ public:
 	TEST_METHOD(TestCompress1)
 	{
 		BCBitmap b;
-		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
+		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/big.bmp");
 		Assert::IsTrue(b.loaded());
 		
 		BCDds* dds = b.compressDXT1();
@@ -159,7 +159,7 @@ public:
 		uint32_t f = '1TXD';
 		Assert::IsTrue(dds->dxt->header.ddspf.dwFourCC == f);
 
-		Assert::IsTrue(dds->saveDds("C:/Dev/bitmap-compressor/Debug/TestData/img3.dds"));
+		Assert::IsTrue(dds->saveDds("C:/Dev/bitmap-compressor/Debug/TestData/big1.dds"));
 	}
 
 	TEST_METHOD(TestCompress2)

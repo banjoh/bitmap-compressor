@@ -8,6 +8,7 @@
 
 #define TEXEL_SIZE 16
 #define TEXEL_WIDTH 4
+#define COLOURS_SIZE 4
 #define RED_MASK 0xF800
 #define GREEN_MASK 0x7E0
 #define BLUE_MASK 0x1F
@@ -16,8 +17,6 @@
 #include "bcbitmap.h"
 #include "reader.h"
 
-#include <cstdlib>
-#include <ctime>
 #include <cassert>
 #include <cmath>
 
@@ -26,49 +25,57 @@ using namespace std;
 class BITMAPCOMPRESSOR_API Algorithm
 {
 public:
+	/*
+	Create a TEXEL from 16 of pixels (4x4 square from pixel array)
+	*/
 	static TEXEL makeTexel(const PIXEL* pixels)
 	{
 		assert(pixels != nullptr);
 
-		srand(time(0)); // use current time as seed for random generator
-
-		// Pick two pixels randomly
-		// TODO: Fix me
-		PIXEL p[2];
+		// Pick pixels closest/furthest to the black & white reference pixels
+		// from the texel
+		PIXEL colours[4];
 		PIXEL ref;
 		ref.red = ref.green = ref.blue = 0;
-		p[0] = pixels[pickPixel(pixels, ref)];
+		colours[0] = pixels[pickPixel(pixels, TEXEL_SIZE, ref)];
 		ref.red = ref.green = ref.blue = 255;
-		p[1] = pixels[pickPixel(pixels, ref)];
+		colours[1] = pixels[pickPixel(pixels, TEXEL_SIZE, ref)];
 
-		TEXEL t;
-		t.rgb565_1 = (p[0].red << 11) | (p[0].green << 5) | p[0].blue;
-		t.rgb565_2 = (p[1].red << 11) | (p[1].green << 5) | p[1].blue;
+		// Interpolate the rest of the colours
+		interpolate(colours[0].red, colours[1].red, colours[2].red, colours[3].red);
+		interpolate(colours[0].green, colours[1].green, colours[2].green, colours[3].green);
+		interpolate(colours[0].blue, colours[1].blue, colours[2].blue, colours[3].blue);
+		
+		TEXEL texel;
+		texel.rgb565_1 = (colours[0].red << 11) | (colours[0].green << 5) | colours[0].blue;
+		texel.rgb565_2 = (colours[1].red << 11) | (colours[1].green << 5) | colours[1].blue;
 
-		// TODO: Fix me
 		for (int i = 0; i < TEXEL_SIZE; i++)
 		{
-			// TODO: Improve this logic. It sucks
-			// Got through the pixels and pick the colour closest to the pixel
-			uint8_t mask = rand() % 4;
-			setBits(t.colours, i, mask);
+			// Iterate through the colours and pick the closest to this one
+			uint8_t mask = (uint8_t)pickPixel(colours, COLOURS_SIZE, pixels[i]);
+			setBits(texel.colours, i, mask);
 		}
 
-		return t;
+		return texel;
 	}
 
-	static int pickPixel(const PIXEL* pixels, const PIXEL& ref)
+	/*
+	Iterate through the pixels[] and find the pixel closest in colour (distannce
+	in 3D space)
+	*/
+	static int pickPixel(const PIXEL* pixels, const int size, const PIXEL& ref)
 	{
 		int idx = 0;
-		int shortestDist = 255*255 + 255*255 + 255*255;
-		for (int i = 0; i < TEXEL_SIZE; i++)
+		int64_t shortestDist = abs(255*255 + 255*255 + 255*255);
+		for (int i = 0; i < size; i++)
 		{
 			PIXEL p = pixels[i];
-			// Calculate distance closest to the reference pixel
-			// Sqrt((x1-x2)^2+(y1-y1)^2+(z1-z2)^2). No need to take sqrt since we
-			// are just comparing values
+			// Calculate shortest distance to the reference pixel
+			// Sqrt((x1-x2)^2+(y1-y1)^2+(z1-z2)^2). Sqrt is expensiver.
+			// No need to take it since we are just comparing values
 
-			int d = abs(pow((ref.red - p.red), 2) + pow((ref.green - p.green), 2) + pow((ref.blue - p.blue), 2));
+			int64_t d = abs(pow((ref.red - p.red), 2) + pow((ref.green - p.green), 2) + pow((ref.blue - p.blue), 2));
 			if (d <= shortestDist)
 			{
 				idx = i;
@@ -78,6 +85,9 @@ public:
 		return idx;
 	}
 
+	/*
+	Create a PIXEL[16] array from a texel which will be part of the bitmap data 
+	*/
 	static PIXEL* makePixels(const TEXEL& t)
 	{
 		PIXEL c[4];
@@ -103,6 +113,9 @@ public:
 		return pixels;
 	}
 
+	/*
+	Interpolate c2 & c3 colours from c1 & c2
+	*/
 	static void interpolate(const uint8_t& c0, const uint8_t& c1, uint8_t& c2, uint8_t& c3)
 	{
 		// https://www.opengl.org/wiki/S3_Texture_Compression

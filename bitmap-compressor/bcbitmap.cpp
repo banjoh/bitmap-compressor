@@ -11,13 +11,6 @@
 
 using namespace std;
 
-#pragma region Helpers
-std::ostream& operator<<(std::ostream& out, const BCBitmap& b)
-{
-	return out << "bitmap" << endl;
-}
-#pragma endregion
-
 #pragma region Read bitmap data
 void BCBitmap::loadBitmap(const string& imgPath)
 {
@@ -86,7 +79,6 @@ bool BCBitmap::readDib(istream_iterator<uint8_t>& it)
 	if (!Reader::readNext(it, d->pallete)) return false;
 	if (!Reader::readNext(it, d->important)) return false;
 
-	// To avoid extra padding bytes
 	if (d->width % 4 != 0)
 	{
 		cerr << "Bitmap width not a multiple of 4" << endl;
@@ -109,8 +101,8 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 	if (header == nullptr)
 		return false;
 
+	// Create a 2D array of pixel data
 	PIXEL** pixels = new PIXEL*[dib->height];
-	int count = 0;
 	for (int i = 0; i < dib->height; i++)
 	{
 		pixels[i] = new PIXEL[dib->width];
@@ -120,7 +112,6 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 			{
 				return false;
 			}
-			count++;
 		}
 	}
 	pixelData.pixels = pixels;
@@ -253,9 +244,11 @@ BCDds* BCBitmap::compressDXT1()
 				for (int l = 0; l < TEXEL_WIDTH; l++)
 				{
 					x = (j * TEXEL_WIDTH) + l;
-					y = (i * TEXEL_WIDTH) + k;
+					
+					// Write pixel data from bottom to top
+					y = dib->height - (((i * TEXEL_WIDTH) + k) + 1);
 
-					sqr.get()[idx] = p[dib->height - (y + 1)][x];
+					sqr.get()[idx] = p[y][x];
 					++idx;
 				}
 			}

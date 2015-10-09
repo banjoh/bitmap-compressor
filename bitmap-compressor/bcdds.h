@@ -23,8 +23,6 @@ class BCBitmap;
 
 using namespace std;
 
-enum Format { UNKNOWN, DXT1, DXT2, DXT3, DXT4, DXT5 };
-
 typedef struct {
 	uint32_t	dwSize;
 	uint32_t	dwFlags;
@@ -64,7 +62,6 @@ typedef struct
 {
 	uint32_t				dwMagic;
 	DDS_HEADER				header;
-	//DDS_HEADER_DXT10		header10;
 	unique_ptr<TEXEL>		texels;
 	int						texelLength;
 } DXT;
@@ -81,7 +78,6 @@ public:
 	bool saveDds(const string& ddsFile);
 	BCBitmap* uncompress();
 
-	inline Format format() { return f; };
 	inline bool loaded() { return _loaded; }
 
 private:
@@ -90,7 +86,6 @@ private:
 	void writeData(ostream& s);
 
 private:
-	Format f;
 	shared_ptr<DXT> dxt;
 	volatile bool _loaded = false;
 };

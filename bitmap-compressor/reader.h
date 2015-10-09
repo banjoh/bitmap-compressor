@@ -12,6 +12,9 @@
 
 using namespace std;
 
+/*
+Reader class for helper functions to extract types from streams
+*/
 class BITMAPCOMPRESSOR_API Reader
 {
 public:
@@ -116,7 +119,7 @@ public:
 		return true;
 	}
 
-	// Helpers
+	// Copy char arrays
 	static void copy(char* dst, const uint8_t* src, int size)
 	{
 		for (int i = 0; i < size; i++)

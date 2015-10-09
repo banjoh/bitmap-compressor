@@ -44,7 +44,17 @@ bool BCDds::readHeader(istream_iterator<uint8_t>& it, DDS_HEADER& h)
 	if (!Reader::readNext(it, h.dwHeight)) return false;
 	if (!Reader::readNext(it, h.dwWidth)) return false;
 
-	if (h.dwWidth % 4 != 0 || h.dwHeight % 4 != 0) return false;
+	if (h.dwWidth % 4 != 0)
+	{
+		cerr << "Bitmap width not a multiple of 4" << endl;
+		return false;
+	}
+
+	if (h.dwHeight % 4 != 0)
+	{
+		cerr << "Bitmap height not a multiple of 4" << endl;
+		return false;
+	}
 
 	if (!Reader::readNext(it, h.dwPitchOrLinearSize)) return false;
 	if (!Reader::readNext(it, h.dwDepth)) return false;
@@ -224,12 +234,10 @@ BCBitmap* BCDds::uncompress()
 				for (int l = 0; l < TEXEL_WIDTH; l++)
 				{
 					x = (j * TEXEL_WIDTH) + l;
-					y = (i * TEXEL_WIDTH) + k;
-					PIXEL p = ps[ps_idx++];
-
-					// flip y-axis. The image is drawn up side down. 
-					// A bug in my code?
-					p2d[d->height - (y + 1)][x] = p;
+					
+					// Write pixel data from bottom to top
+					y = d->height - (((i * TEXEL_WIDTH) + k) + 1);
+					p2d[y][x] = ps[ps_idx++];
 				}
 			}
 		}
