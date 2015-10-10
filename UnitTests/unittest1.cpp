@@ -21,6 +21,15 @@ public:
 		Assert::IsTrue(b.loaded());
 	}
 
+	TEST_METHOD(TestLoadBitmap2)
+	{
+		BCBitmap b;
+		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
+		Assert::IsTrue(b.loaded());
+		b.loadBitmap("C:/Dev/bitmap-compressor/Debug/TestData/img1.bmp");
+		Assert::IsTrue(b.loaded());
+	}
+
 	TEST_METHOD(TestSaveBitmap1)
 	{
 		BCBitmap b;

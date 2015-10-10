@@ -103,6 +103,6 @@ private:
 	volatile bool _loaded = false;
 	shared_ptr<HEADER> header;
 	shared_ptr<DIB> dib;
-	PIXELDATA pixelData;
+	unique_ptr<PIXELDATA> pixelData;
 };
 

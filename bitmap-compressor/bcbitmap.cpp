@@ -101,6 +101,8 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 	if (header == nullptr)
 		return false;
 
+	unique_ptr<PIXELDATA> pixelData(new PIXELDATA());
+
 	// Create a 2D array of pixel data
 	PIXEL** pixels = new PIXEL*[dib->height];
 	for (int i = 0; i < dib->height; i++)
@@ -114,9 +116,9 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 			}
 		}
 	}
-	pixelData.pixels = pixels;
-	pixelData.height = dib->height;
-	pixelData.width = dib->width;
+	pixelData->pixels = pixels;
+	pixelData->height = dib->height;
+	pixelData->width = dib->width;
 
 	return true;
 }
@@ -130,7 +132,7 @@ bool BCBitmap::saveBitmap(const string& imgPath)
 	fs.open(imgPath, ofstream::out | ofstream::trunc | ios::binary);
 	fs.unsetf(ios::skipws);
 
-	if (fs.good() && dib != nullptr && header != nullptr && pixelData.pixels != nullptr)
+	if (fs.good() && dib != nullptr && header != nullptr && pixelData != nullptr)
 	{
 		writeHeader(fs);
 		writeDib(fs);
@@ -168,11 +170,11 @@ void BCBitmap::writeDib(ostream& s)
 
 void BCBitmap::writePixelArray(ostream& s)
 {
-	PIXEL** pixels = pixelData.pixels;
+	PIXEL** pixels = pixelData->pixels;
 	int count = 0;
-	for (int i = 0; i < pixelData.height; i++)
+	for (int i = 0; i < pixelData->height; i++)
 	{
-		for (int j = 0; j < pixelData.width; j++)
+		for (int j = 0; j < pixelData->width; j++)
 		{
 			PIXEL p = pixels[i][j];
 			s.write((char*)&(p.red), sizeof(uint8_t));
@@ -221,7 +223,7 @@ BCDds* BCBitmap::compressDXT1()
 	d->header.dwCaps4 = 0;
 	d->header.dwReserved2 = 0;
 
-	auto p = pixelData.pixels;
+	auto p = pixelData->pixels;
 	shared_ptr<PIXEL> sqr(new PIXEL[TEXEL_WIDTH *  TEXEL_WIDTH]);
 	auto texelWidth = dib->width / TEXEL_WIDTH;
 	auto texelHeight = dib->height / TEXEL_WIDTH;
@@ -292,5 +294,6 @@ BCBitmap::~BCBitmap()
 {
 	header.reset();
 	dib.reset();
+	pixelData.reset();
 }
 

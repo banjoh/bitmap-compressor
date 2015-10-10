@@ -201,15 +201,16 @@ BCBitmap* BCDds::uncompress()
 	d->important = 0;
 	
 	//PIXELDATA
-	b->pixelData.width = d->width;
-	b->pixelData.height = d->height;
+	b->pixelData = unique_ptr<PIXELDATA>(new PIXELDATA());
+	b->pixelData->width = d->width;
+	b->pixelData->height = d->height;
 
 	// Allocate memory for the pixels
-	b->pixelData.pixels = new PIXEL*[b->pixelData.height];
+	b->pixelData->pixels = new PIXEL*[b->pixelData->height];
 	int count = 0;
-	for (int i = 0; i < b->pixelData.height; i++)
+	for (int i = 0; i < b->pixelData->height; i++)
 	{
-		b->pixelData.pixels[i] = new PIXEL[b->pixelData.width];
+		b->pixelData->pixels[i] = new PIXEL[b->pixelData->width];
 	}
 
 	TEXEL* ts = dxt->texels.get();
@@ -222,7 +223,7 @@ BCBitmap* BCDds::uncompress()
 	int t_idx = 0;
 	int x = 0;
 	int y = 0;
-	PIXEL** p2d = b->pixelData.pixels;
+	PIXEL** p2d = b->pixelData->pixels;
 	for (int i = 0; i < texelHeight; i++)
 	{
 		for (int j = 0; j < texelWidth; j++)
