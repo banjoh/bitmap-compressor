@@ -101,7 +101,7 @@ bool BCBitmap::readPixelArray(istream_iterator<uint8_t>& it)
 	if (header == nullptr)
 		return false;
 
-	unique_ptr<PIXELDATA> pixelData(new PIXELDATA());
+	pixelData = unique_ptr<PIXELDATA>(new PIXELDATA());
 
 	// Create a 2D array of pixel data
 	PIXEL** pixels = new PIXEL*[dib->height];
